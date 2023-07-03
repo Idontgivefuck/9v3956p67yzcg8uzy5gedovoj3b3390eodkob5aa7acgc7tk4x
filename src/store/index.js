@@ -235,7 +235,7 @@ const store = createStore({
           dispatch("getPosts");
           event("post", "delete");
         } else {
-          commit("error", "Error deleting post");
+          commit("error", "Errore durante l'eliminazione del post");
         }
       });
     },

@@ -75,13 +75,6 @@ export default {
 
           <router-link
             class="cursor-pointer text-white sm:py-2 py-[0.6px] sm:px-3 rounded-md font-bold"
-            to="/map"
-            @click="() => (showNav = false)">
-            Mappa (In fase di sviluppo...)
-          </router-link>
-
-          <router-link
-            class="cursor-pointer text-white sm:py-2 py-[0.6px] sm:px-3 rounded-md font-bold"
             to="/memories"
             @click="() => (showNav = false)">
             Le tue Memorie
@@ -119,13 +112,6 @@ export default {
             </a>
 
             <react-to-all v-if="this.$store.state.loggedIn" />
-
-            <router-link
-              class="cursor-pointer text-white sm:py-2 py-[0.6px] sm:px-3 rounded-md font-bold"
-              to="/map"
-              @click="() => (showNav = false)">
-              Mappa (In fase di sviluppo...)
-            </router-link>
 
             <router-link
               class="cursor-pointer text-white sm:py-2 py-[0.6px] sm:px-3 rounded-md font-bold"

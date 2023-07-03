@@ -151,7 +151,7 @@ export default {
 
     submitRealMojis() {
       if (this.file === undefined || this.file === null) {
-        this.$store.commit("error", "No image selected");
+        this.$store.commit("error", "Nessuna immagine selezionata");
         return;
       }
       this.loading = true;

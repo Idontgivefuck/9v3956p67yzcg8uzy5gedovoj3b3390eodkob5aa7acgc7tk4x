@@ -2,6 +2,7 @@
 import MyButton from "../ui/Button.vue";
 import { v4 as uuidv4 } from "uuid";
 import moment from "moment";
+
 export default {
   props: ["postID", "postOwnerID"],
   data() {
@@ -18,9 +19,15 @@ export default {
       console.log(e);
       this.file = e.target.files[0];
       this.imageurl = URL.createObjectURL(this.file);
+
+      const img = new Image();
+      img.onload = () => {
+        this.file.width = img.width;
+        this.file.height = img.height;
+      };
+      img.src = this.imageurl;
     },
     async uploadPhotoToBeReal(file) {
-      // https://cdn.bereal.network/Photos/WGpTqIX0diZQu3UjoZE8FnUAzNi2/realmoji/WGpTqIX0diZQu3UjoZE8FnUAzNi2-realmoji-instant-1669332458.webp
       // upload 2 files
       // get proxy url from state
       const getUploadUrl = () => {
@@ -123,7 +130,7 @@ export default {
     },
     async submitRealMoji() {
       if (this.file === undefined || this.file === null) {
-        this.$store.commit("error", "No image selected");
+        this.$store.commit("error", "Nessuna immagine selezionata");
         return;
       }
       this.loading = true;
@@ -141,22 +148,40 @@ export default {
         });
     },
   },
+  computed: {
+  getRealmojiImageStyle() {
+    if (this.file) {
+      const maxEmojiSize = 24; // Dimensione massima dell'emoji
+      const emojiSpacing = 4; // Spazio tra le emoji
 
+      const scale = Math.min(
+        maxEmojiSize / this.file.width,
+        maxEmojiSize / this.file.height
+      );
+
+      const scaledWidth = this.file.width * scale;
+      const scaledHeight = this.file.height * scale;
+
+      return `width: ${scaledWidth}px; height: ${scaledHeight}px; margin-right: ${emojiSpacing}px;`;
+    }
+  },
+},
   components: { MyButton },
 };
 </script>
+
 <template>
   <div class="flex items-center gap-3">
     <div>
       <label :for="postID">
-        <div
-          class="border-white w-24 h-24 rounded-[50%] border-2 cursor-pointer">
+        <div class="border-white w-24 h-24 rounded-[50%] border-2 cursor-pointer">
           <input
             type="file"
             :id="postID"
             style="display: none"
             name="image"
-            @change="onFileChange" />
+            @change="onFileChange"
+          />
 
           <div v-if="!file">
             <img src="../../assets/add.svg" alt="plus" />
@@ -164,8 +189,9 @@ export default {
           <div v-else class="cursor-pointer">
             <img
               :src="imageurl"
-              class="w-24 rounded-[50%]"
-              alt="realmoji to upload" />
+              :style="getRealmojiImageStyle"
+              alt="realmoji to upload"
+            />
           </div>
         </div>
       </label>
