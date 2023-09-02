@@ -2,7 +2,7 @@
   <div v-if="!sessionInfo">
     <div class="text-center text-white pt-10">
       <h1 class="font-bold mt-0 mb-6 text-7xl">BeFake</h1>
-      <h3 class="text-2xl font-bold mb-8">All credits to @https.donato</h3>
+      <h3 class="text-2xl font-bold mb-8">A BeReal Viewer</h3>
     </div>
     <div
       class="flex items-center justify-center mt-[75%] flex-col sm:flex-row sm:mt-[15%]">
@@ -11,9 +11,9 @@
         @enterPressed="sendCode"
         typeOfInput="tel"
         v-model="phone"
-        placeholder="Numero di telefono"
+        placeholder="Phone Number"
         class="max-w-sm" />
-      <MyButton @clickedd="sendCode" :loading="loading">Invia</MyButton>
+      <MyButton @clickedd="sendCode" :loading="loading">Send</MyButton>
     </div>
   </div>
 
@@ -21,7 +21,7 @@
     <div
       class="flex items-center justify-center mt-[75%] flex-col sm:flex-row sm:mt-[25%]">
       <span class="mr-2 dark:text-white"
-        >Inserisci l'OTP ricevuto sul tuo telefono:
+        >Enter the OTP sent to your phone number:
       </span>
       <MyInput
         @enterPressed="verifyCode"
@@ -29,7 +29,7 @@
         placeholder="123456"
         class="max-w-sm"
         typeOfInput="number" />
-      <MyButton @clickedd="verifyCode" :loading="loading">Verifica</MyButton>
+      <MyButton @clickedd="verifyCode" :loading="loading">Verify</MyButton>
     </div>
   </div>
 </template>
@@ -103,29 +103,104 @@ export default {
         this.loading = false;
         return;
       }
-      fetch(`${this.$store.state.loginUrl}`, {
-        method: "POST",
-        body: JSON.stringify({
-          phoneNumber: this.cc + this.phone,
-        }),
-      })
-        .then((res) => {
-          console.log(res.status);
-          return res.json();
-        })
+      fetch(
+        "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyClient?key=AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA",
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "*/*",
+            "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
+            "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
+            "accept-language": "en",
+            "user-agent":
+              "FirebaseAuth.iOS/9.6.0 AlexisBarreyat.BeReal/0.31.0 iPhone/14.7.1 hw/iPhone9_1",
+            "x-firebase-locale": "en",
+            "x-firebase-gmpid": "1:405768487586:ios:28c4df089ca92b89",
+          },
+          body: JSON.stringify({
+            appToken:
+              "54F80A258C35A916B38A3AD83CA5DDD48A44BFE2461F90831E0F97EBA4BB2EC7",
+          }),
+        }
+      )
+        .then((response) => response.json())
         .then((data) => {
-          if (data.error) {
-            throw Error(data.error.message);
-          }
-          this.sessionInfo = data.sessionInfo;
-          if (data.vonage) {
-            this.vonage = true;
-          }
-          this.loading = false;
-        })
-        .catch((e) => {
-          this.handleError(e);
-          this.loading = false;
+          console.log("this is the data receipt:", data.receipt);
+          fetch(
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/sendVerificationCode?key=AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA",
+            {
+              method: "POST",
+              headers: {
+                "content-type": "application/json",
+                accept: "*/*",
+                "x-client-version": "iOS/FirebaseSDK/9.6.0/FirebaseCore-iOS",
+                "x-ios-bundle-identifier": "AlexisBarreyat.BeReal",
+                "accept-language": "en",
+                "user-agent":
+                  "FirebaseAuth.iOS/9.6.0 AlexisBarreyat.BeReal/0.28.2 iPhone/14.7.1 hw/iPhone9_1",
+                "x-firebase-locale": "en",
+                "x-firebase-gmpid": "1:405768487586:ios:28c4df089ca92b89",
+              },
+              body: JSON.stringify({
+                iosReceipt: data.receipt,
+                phoneNumber: this.cc + this.phone,
+              }),
+            }
+          )
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                if (data.error.message === "APP_NOT_VERIFIED") {
+                  // handle app not verified
+                  fetch("https://auth.bereal.team/api/vonage/request-code", {
+                    method: "POST",
+                    headers: {
+                      accept: "application/json",
+                      "content-type": "application/json",
+                      "user-agent":
+                        "BeReal/7242 CFNetwork/1333.0.4 Darwin/21.5.0",
+                      "accept-language": "en-US,en;q=0.9",
+                    },
+                    body: JSON.stringify({
+                      phoneNumber: this.cc + this.phone,
+                      deviceId: "ntbgbuk8ly5gjvv3",
+                    }),
+                  })
+                    .then((response) => {
+                      if (!response.ok) {
+                        console.log("vonage error");
+                      }
+                      return response.json();
+                    })
+                    .then((data2) => {
+                      console.log("vonage data", data2);
+                      return {
+                        sessionInfo: data2.vonageRequestId,
+                        vonage: true,
+                      };
+                    });
+                } else {
+                  console.log(
+                    "sendVerificationCode responded with an error",
+                    data.error.message
+                  );
+                }
+              } else {
+                return data; // this is the sessionInfo
+              }
+            })
+            .then((data) => {
+              this.sessionInfo = data.sessionInfo;
+              if (data.vonage) {
+                this.vonage = true;
+              }
+              this.loading = false;
+            })
+            .catch((error) => {
+              this.handleError(error);
+              this.loading = false;
+            });
         });
     },
     verifyCode() {
@@ -133,6 +208,7 @@ export default {
         event_category: "login",
         event_label: "verify_code",
       });
+
       this.loading = true;
       if (this.vonage) {
         fetch(
@@ -191,7 +267,7 @@ export default {
         return;
       }
       fetch(
-        `${this.$store.state.proxyUrl}/https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA`,
+        `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPhoneNumber?key=AIzaSyDwjfEeparokD7sXPVQli9NsTuhT6fJ6iA`,
         {
           method: "POST",
           headers: {

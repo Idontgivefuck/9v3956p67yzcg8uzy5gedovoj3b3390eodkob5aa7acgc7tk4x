@@ -72,7 +72,7 @@ export default {
           </div>
 
           <div class="modal-footer">
-            <MyButton @click="$emit('close')"> Annulla </MyButton>
+            <MyButton @click="$emit('close')"> close </MyButton>
           </div>
         </div>
       </div>
